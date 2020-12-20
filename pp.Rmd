@@ -1,0 +1,118 @@
+
+##tables of population and internetusers
+```{r message = FALSE}
+library(tidyverse)
+population_cia2017 <- read_csv("population_cia2017.csv")
+
+internetusers_cia2017 <- read_csv("internetusers_cia2017.csv")
+
+glimpse(population_cia2017)
+glimpse(internetusers_cia2017) 
+```
+##create the data needed by inner join 
+```{r message = FALSE}
+internetuse <-inner_join(internetusers_cia2017 ,population_cia2017,by = "Country")
+internet_use<-mutate(internetuse,percentage=internetuse$ 'INTERNET USERS' / internetuse $ POPULATION)
+
+select(internet_use,Country,'INTERNET USERS', POPULATION, percentage)
+```
+##create new data to compare reigonal internet use
+```{r message = FALSE}
+world_regions <- read_csv("world_regions.csv")
+world_regions %>% head()
+
+world <- inner_join(internet_use, world_regions, by = 'Country' )
+internet_world <- select(world, Country, percentage, Region) %>%
+  group_by(Region) %>%
+  summarize('total Country' = n(), 'average internet usage' = sum(percentage / n()))
+internet_world 
+```
+
+##Create a bar graph to visualize
+```{r}
+averageinternetuse <- c(0.2038277, 0.4614830, 0.4680625,  0.7814505, 0.8590582 ,0.5383413)
+barplot(averageinternetuse, 
+        main = "Average Internet Use By Regions", 
+        xlab = "Region", 
+        ylab = "Average Internet Use", 
+        cex.names = 0.55,
+        names.arg = c("Africa", "ArabStates", "Asia&Pacific",  "Europe", "NorthAmerica", "South/LatinAmerica"), 
+        col = "black", 
+        horiz = FALSE)
+```
+#democracy
+```{r message = FALSE}
+democracyindex2017 <- read_csv("democracyindex2017.csv")
+
+democracy <- inner_join(internet_use, democracyindex2017, by = 'Country')
+select(democracy, Country, percentage, Score)
+
+```
+##linear regression and summary
+```{r message = FALSE}
+demo_score = democracy$Score
+democracy$Score<-as.numeric(democracy$Score) 
+ggplot(democracy, aes(x = Score, y = percentage)) + geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+summary(lm(Score ~ percentage, data = democracy))
+```
+
+##education
+```{r message = FALSE}
+education_cia2017 <- read_csv("education_cia2017.csv")
+education <- inner_join(internet_use, education_cia2017, by = 'Country')
+select(education, Country, percentage, "(% OF GDP)")
+```
+
+#linear regression and summary
+```{r message = FALSE}
+edu_score = education$"(% OF GDP)"
+ggplot(education, aes(x = edu_score, y = percentage)) + geom_point()+
+  geom_smooth(method = "lm", se = FALSE)
+```
+```{r}
+summary(lm(edu_score ~ percentage, data = education))
+```
+##economy
+```{r message = FALSE}
+gdpppp_cia2017 <- read_csv("gdpppp_cia2017.csv")
+economy <- inner_join(internet_use, gdpppp_cia2017, by = 'Country')
+economy<-economy%>%
+  mutate(`GDP - PER CAPITA (PPP)`=as.numeric(trimws(str_remove_all(`GDP - PER CAPITA (PPP)`,"\\$|\\,"))))
+select(economy, Country, percentage, "GDP - PER CAPITA (PPP)")
+
+```
+##linear regression and summary
+```{r message = FALSE}
+eco_score = economy$`GDP - PER CAPITA (PPP)`
+ggplot(economy, aes(x = eco_score, y = percentage)) + geom_point()+
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+summary(lm(eco_score ~ percentage, data = economy))
+```
+#health
+```{r message = FALSE}
+healthexpend_cia2017 <- read_csv("healthexpend_cia2017.csv")
+
+health <- inner_join(internet_use, healthexpend_cia2017, by = 'Country')
+select(health, Country, percentage, "(% OF GDP)") 
+
+```
+
+##linear regression and summary
+```{r message = FALSE}
+health_score = health$"(% OF GDP)"
+ggplot(health, aes(x = health_score, y = percentage)) + geom_point()+
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+```{r}
+summary(lm(health_score ~ percentage, data = health))
+```
+
+
